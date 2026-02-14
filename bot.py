@@ -3,18 +3,6 @@ import random
 import aiohttp
 import json
 import sys
-import types
-from telegram.ext import Updater
-
-# Monkey patch для исправления проблемы
-def __init___patch(self, bot=None, update_queue=None, workers=4):
-    # Сохраняем оригинальный __init__ если нужно
-    pass
-
-# Применяем патч если необходимо
-if not hasattr(Updater, '_Updater__polling_cleanup_cb'):
-    # Создаем фиктивный атрибут
-    setattr(Updater, '_Updater__polling_cleanup_cb', None)
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 from config import BOT_TOKEN, KINOPOISK_API_KEY
@@ -34,6 +22,34 @@ logging.basicConfig(
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
+
+# Monkey patch для исправления проблемы с Updater
+try:
+    from telegram.ext import Updater
+    
+    # Сохраняем оригинальный __init__
+    original_updater_init = Updater.__init__
+    
+    # Создаем новый __init__ без проблемного атрибута
+    def patched_updater_init(self, *args, **kwargs):
+        # Сначала вызываем оригинальный __init__ через object.__setattr__ чтобы избежать проблемы
+        # Но мы не можем вызвать оригинал напрямую из-за ошибки
+        # Поэтому используем обходной путь
+        
+        # Создаем атрибут через object.__setattr__ до вызова оригинального __init__
+        try:
+            object.__setattr__(self, '_Updater__polling_cleanup_cb', None)
+        except AttributeError:
+            pass
+        
+        # Теперь вызываем оригинальный __init__
+        original_updater_init(self, *args, **kwargs)
+    
+    # Применяем патч
+    Updater.__init__ = patched_updater_init
+    logger.info("Monkey patch для Updater применен")
+except Exception as e:
+    logger.warning(f"Не удалось применить monkey patch: {e}")
 
 # Жанры для отображения в боте
 GENRES_DISPLAY = {
@@ -83,8 +99,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 Выберите, что вас интересует:
 """
-    # URL для Web App (нужно будет указать ваш домен)
-    web_app_url = "https://service-production-25ac.up.railway.app/"  # Замените на ваш URL
+    # URL для Web App (замените на ваш актуальный URL)
+    web_app_url = "https://your-domain.com"  # Замените на ваш URL
     
     keyboard = [
         [InlineKeyboardButton("📱 Открыть мини-приложение", web_app=WebAppInfo(url=web_app_url))],
@@ -365,7 +381,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif query.data == 'main_menu':
             user_id = query.from_user.id
             favorites_count = get_favorites_count(user_id)
-            web_app_url = "https://your-domain.com/webapp/index.html"  # Замените на ваш URL
+            web_app_url = "https://your-domain.com"  # Замените на ваш URL
             
             welcome_text = f"""
 🎬 <b>Главное меню</b>
@@ -471,7 +487,6 @@ async def view_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         movie_id = int(parts[2])
         
         async with aiohttp.ClientSession() as session:
-            from kinopoisk_api import get_movie_by_id
             movie_data = await get_movie_by_id(session, movie_id)
             
             if movie_data:
@@ -494,23 +509,29 @@ def main():
         logger.info("Получить API ключ можно на https://kinopoisk.dev/ или через @poiskkinodev_bot")
         return
     
-    # Создаем приложение
-    application = Application.builder().token(BOT_TOKEN).build()
-    
-    # Регистрируем обработчики
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(button_handler))
-    application.add_handler(CallbackQueryHandler(view_handler, pattern='^view_'))
-    
-    # Обработчик текстовых сообщений для поиска
-    from telegram.ext import MessageHandler, filters
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_handler))
-    
-    # Запускаем бота
-    logger.info("Бот запущен!")
-    logger.info("Синхронизация с Кинопоиском и Wink активна!")
-    logger.info("База данных избранного инициализирована!")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    try:
+        # Создаем приложение
+        application = Application.builder().token(BOT_TOKEN).build()
+        
+        # Регистрируем обработчики
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CallbackQueryHandler(button_handler))
+        application.add_handler(CallbackQueryHandler(view_handler, pattern='^view_'))
+        
+        # Обработчик текстовых сообщений для поиска
+        from telegram.ext import MessageHandler, filters
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, search_handler))
+        
+        # Запускаем бота
+        logger.info("Бот запущен!")
+        logger.info("Синхронизация с Кинопоиском и Wink активна!")
+        logger.info("База данных избранного инициализирована!")
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
+    except Exception as e:
+        logger.error(f"Ошибка при запуске бота: {e}")
+        logger.info("Попробуйте установить другую версию python-telegram-bot:")
+        logger.info("pip uninstall python-telegram-bot")
+        logger.info("pip install python-telegram-bot==20.7")
 
 
 if __name__ == '__main__':
