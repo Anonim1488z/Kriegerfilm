@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Фильмы и сериалы</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Что посмотреть?</h1>
+            <div class="hint">
+                <div class="hint-item">
+                    <span class="hint-icon">👉</span>
+                    <span>Свайп вправо → в избранное</span>
+                </div>
+                <div class="hint-item">
+                    <span class="hint-icon">👈</span>
+                    <span>Свайп влево → не интересно</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="movie-card" id="movieCard">
+            <div class="loading" id="loading">Загрузка...</div>
+            <div class="movie-content" id="movieContent" style="display: none;">
+                <img id="poster" src="" alt="Постер">
+                <div class="movie-info">
+                    <h2 id="title"></h2>
+                    <div class="rating" id="rating"></div>
+                    <div class="details" id="details"></div>
+                    <p class="description" id="description"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-dislike" id="dislikeBtn">👈 Не интересно</button>
+            <button class="btn btn-like" id="likeBtn">👉 В избранное</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-label">Просмотрено:</span>
+                <span class="stat-value" id="viewedCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">В избранном:</span>
+                <span class="stat-value" id="favoritesCount">0</span>
+            </div>
+        </div>
+
+        <div class="menu">
+            <button class="menu-btn" id="favoritesBtn">⭐ Избранное</button>
+            <button class="menu-btn" id="refreshBtn">🔄 Обновить</button>
+        </div>
+    </div>
+
+    <div class="favorites-modal" id="favoritesModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⭐ Избранное</h2>
+                <button class="close-btn" id="closeModal">✕</button>
+            </div>
+            <div class="favorites-list" id="favoritesList"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
+
