@@ -2,6 +2,19 @@ import logging
 import random
 import aiohttp
 import json
+import sys
+import types
+from telegram.ext import Updater
+
+# Monkey patch для исправления проблемы
+def __init___patch(self, bot=None, update_queue=None, workers=4):
+    # Сохраняем оригинальный __init__ если нужно
+    pass
+
+# Применяем патч если необходимо
+if not hasattr(Updater, '_Updater__polling_cleanup_cb'):
+    # Создаем фиктивный атрибут
+    setattr(Updater, '_Updater__polling_cleanup_cb', None)
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 from config import BOT_TOKEN, KINOPOISK_API_KEY
